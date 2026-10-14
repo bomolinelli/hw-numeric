@@ -1,15 +1,21 @@
+#you have to figure out what __dunder__ methods to use
 '''
 Exact polynomial arithmetic over the rationals.
 
 Coefficients are stored from lowest to highest degree.
 
+#recall that print function calls the __str__ dunder class
+#just putting the instance name (p) calls repr dunder class
+
 >>> p = Poly([1, 2, 3])
->>> print(p)
+>>> print(p) #calls __str__
+>>> p   #calls __repr__
 3x**2 + 2x + 1
 
 Polynomials are just functions with special structure,
 and they can be called like regular functions.
 
+#here poly is also a function, so we'll have to implement __call__
 >>> p(3)
 34
 
