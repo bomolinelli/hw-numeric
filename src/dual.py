@@ -181,7 +181,7 @@ class Dual:
 
     def __truediv__(self, other):
         if isinstance(other, Dual):
-            return Dual(self.v / other.v,(self.d * other.v - self.v * other.d) / (other.v ** 2))
+            return Dual(self.v / other.v, (self.d * other.v - self.v * other.d) / (other.v ** 2))
         return Dual(self.v / other, self.d / other)
 
     def __rtruediv__(self, other):
