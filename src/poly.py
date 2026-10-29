@@ -9,8 +9,9 @@ Coefficients are stored from lowest to highest degree.
 
 >>> p = Poly([1, 2, 3])
 >>> print(p) #calls __str__
->>> p   #calls __repr__
 3x**2 + 2x + 1
+>>> p   #calls __repr__
+Poly([1, 2, 3])
 
 Polynomials are just functions with special structure,
 and they can be called like regular functions.
@@ -111,6 +112,91 @@ class Poly:
     >>> print(Poly([1, 0, 2]))
     2x**2 + 1
     '''
+
+    def __init__(self, coeffs):
+        coeffs = list(coeffs)
+        while len(coeffs) > 1 and coeffs[-1] == 0:
+            coeffs.pop()
+        self.coeffs = coeffs if coeffs else [0]
+
+    def __eq__(self, other):
+        if not isinstance(other, Poly):
+            return NotImplemented
+        return self.coeffs == other.coeffs
+
+    __hash__ = None
+
+    def __repr__(self):
+        return f'Poly({self.coeffs!r})'
+
+    def __str__(self):
+        out = ''
+        for i in range(len(self.coeffs) - 1, -1, -1):
+            c = self.coeffs[i]
+            if c == 0:
+                continue
+            if i == 0:
+                term = str(abs(c))
+            else:
+                number = '' if abs(c) == 1 else str(abs(c))
+                power = 'x' if i == 1 else f'x**{i}'
+                term = number + power
+            if out == '':
+                out = ('-' if c < 0 else '') + term
+            else:
+                out += (' - ' if c < 0 else ' + ') + term
+        return out if out else '0'
+
+    def __call__(self, x):
+        return self.eval_horner(x)
+
+    def derivative(self):
+        return Poly([i * c for i, c in enumerate(self.coeffs)][1:])
+
+    def __add__(self, other):
+        a, b = self.coeffs, other.coeffs
+        n = max(len(a), len(b))
+        a = a + [0] * (n - len(a))
+        b = b + [0] * (n - len(b))
+        return Poly([x + y for x, y in zip(a, b)])
+
+    def __neg__(self):
+        return Poly([-c for c in self.coeffs])
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __mul__(self, other):
+        return self.mul_karatsuba(other)
+
+    def __pow__(self, n):
+        if n < 0:
+            raise ValueError('exponent must be non-negative')
+        result = Poly([1])
+        for _ in range(n):
+            result = result * self
+        return result
+
+    def __iadd__(self, other):
+        self.coeffs = (self + other).coeffs
+        return self
+
+    def __isub__(self, other):
+        self.coeffs = (self - other).coeffs
+        return self
+
+    def __imul__(self, other):
+        self.coeffs = (self * other).coeffs
+        return self
+
+    def __ipow__(self, n):
+        self.coeffs = (self ** n).coeffs
+        return self
+
+    def mul_karatsuba(self, other):
+        return Poly(_karatsuba(self.coeffs, other.coeffs))
+
+
     def eval_naive(self, x):
         '''
         Evaluate by summing a_i * x**i one term at a time.  The
@@ -185,3 +271,36 @@ def _karatsuba(a, b):
     >>> _karatsuba([0], [1, 2, 3])
     [0, 0, 0]
     '''
+    if len(a) == 1 or len(b) == 1:
+        out = [0] * (len(a) + len(b) - 1)
+        for i, ai in enumerate(a):
+            for j, bj in enumerate(b):
+                out[i + j] += ai * bj
+        return out
+
+    size = len(a) + len(b) - 1
+    n = max(len(a), len(b))
+    a = a + [0] * (n - len(a))
+    b = b + [0] * (n - len(b))
+    m = n // 2
+    a_low, a_high = a[:m], a[m:]
+    b_low, b_high = b[:m], b[m:]
+    a_sum = [x + y for x, y in zip(a_low + [0] * (n - 2 * m), a_high)]
+    b_sum = [x + y for x, y in zip(b_low + [0] * (n - 2 * m), b_high)]
+
+    low = _karatsuba(a_low, b_low)
+    high = _karatsuba(a_high, b_high)
+    middle = _karatsuba(a_sum, b_sum)
+    for i, c in enumerate(low):
+        middle[i] -= c
+    for i, c in enumerate(high):
+        middle[i] -= c
+
+    out = [0] * (2 * n - 1)
+    for i, c in enumerate(low):
+        out[i] += c
+    for i, c in enumerate(middle):
+        out[i + m] += c
+    for i, c in enumerate(high):
+        out[i + 2 * m] += c
+    return out[:size]
