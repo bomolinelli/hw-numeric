@@ -1,4 +1,4 @@
-#you have to figure out what __dunder__ methods to use
+# you have to figure out what __dunder__ methods to use
 '''
 Exact polynomial arithmetic over the rationals.
 
@@ -195,7 +195,6 @@ class Poly:
 
     def mul_karatsuba(self, other):
         return Poly(_karatsuba(self.coeffs, other.coeffs))
-
 
     def eval_naive(self, x):
         '''
